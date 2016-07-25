@@ -1,15 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class NamingProcess : MonoBehaviour {
+public class PlayerBehaviour : MonoBehaviour {
+
+
+
 
 	// Use this for initialization
-	void Start () {
+	void Start ()
+    {
 	
 	}
 	
 	// Update is called once per frame
-	void Update () {
+	void Update ()
+    {
 	
 	}
 }
