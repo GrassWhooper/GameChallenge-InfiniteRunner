@@ -5,6 +5,10 @@ using System.Collections.Generic;
 
 public class PlayerBehaviour : MonoBehaviour {
 
+    enum movementStatuses {NormalMovement , AcceleratedMovement  };
+
+    movementStatuses playerStatus;
+
     [Tooltip(" Force to be put into {X} Direction when moving ")]
     public float speed = 30;
 
@@ -15,14 +19,19 @@ public class PlayerBehaviour : MonoBehaviour {
     public float autoMoveSpeed = 30;
 
     [Tooltip("Maximum Speed in the {Z} Direction")]
-    public float maxAutoMoveSpeed=80f;
+    public float maxAutoMoveSpeed=60f;
 
     [Tooltip("this is applied when not moving above one, speed will increase")]
     public float speedMultiplierWhenNotMoving = 0.9f;
 
+    [Tooltip("how much faster to go on the Z direction")]
+    public float accelerateByOnZ = 20f;
 
-    float yMovement;
+    public float acceleratedMaxSpeed=80;
 
+    public bool accelerating = false;
+
+    float VertiDirecting;
     float xMovement;
     Rigidbody rb3d;
     Vector3 movementDirection;
@@ -35,37 +44,34 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         rb3d = GetComponent<Rigidbody>();
         movementDirection = new Vector3(1, 1, 1);
-
+        playerStatus = new movementStatuses();
+        playerStatus = movementStatuses.NormalMovement;
     }
 	
 	// Update is called once per frame
 	void Update ()
     {
         xPlayerMovement();
-        yPlayerMovement();
+        zPlayerMovement();
         print(rb3d.velocity);
     }
 
-    void AcceleratePlayerOnZ( float yMovement , Vector3 Acceleration)
+    void PlayerMovement()
     {
-
 
 
     }
 
-    void yPlayerMovement()
+    void zPlayerMovement()
     {
-        yMovement = CrossPlatformInputManager.GetAxis("Vertical");
+        VertiDirecting = CrossPlatformInputManager.GetAxis("Vertical");
         Vector3 movementDirection = new Vector3(1, 1, 1);
         Vector3 movementForce = new Vector3(0, 0, 0);
         if (Mathf.Abs(rb3d.velocity.z) < (maxAutoMoveSpeed))
         {
             movementForce.z = movementForce.z + movementDirection.z;
             movementForce = movementForce * autoMoveSpeed;
-            if (yMovement != 0 )
-            {
-                AcceleratePlayerOnZ(yMovement,movementForce );
-            }
+
             rb3d.AddForce(movementForce);
         }
         else if (Mathf.Abs( rb3d.velocity.z )>= maxAutoMoveSpeed)
@@ -74,13 +80,11 @@ public class PlayerBehaviour : MonoBehaviour {
             speedLimiter.z = speedLimiter.z + movementDirection.z;
             speedLimiter = speedLimiter * maxAutoMoveSpeed;
             speedLimiter.x = rb3d.velocity.x;
-            if (yMovement != 0)
-            {
-                AcceleratePlayerOnZ(yMovement,speedLimiter);
-            }
+
             rb3d.velocity = speedLimiter;
         }
     }
+
 
     void xPlayerMovement()
     {
