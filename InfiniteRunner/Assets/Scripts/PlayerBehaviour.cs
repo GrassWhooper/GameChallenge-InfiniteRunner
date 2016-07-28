@@ -33,9 +33,18 @@ public class PlayerBehaviour : MonoBehaviour {
 
     [Tooltip("how long the player can keep accelerating his speed")]
     public float runningTimer = 4f;
-    
 
+    [Tooltip("this is the force in which will be added when you use jump keys.")]
+    public Vector3 jumpingForce = new Vector3(0,450f,0);
+
+
+    [Tooltip("DistanceCheck Between Player And Ground. Suggested {Half the heigth of the capsule collider+ something}")]
+    public float raylength = 0;
+
+
+    bool playerTouchingGround;
     float resetRunningTimer,resetRunningCoolDown;
+    CapsuleCollider myCapsule;
     float xMovement;
     Rigidbody rb3d;
     Vector3 BaseVector;
@@ -60,18 +69,69 @@ public class PlayerBehaviour : MonoBehaviour {
 
         
         resetRunningTimer = runningTimer;
+
+        myCapsule = GetComponent<CapsuleCollider>();
     }
 
     void Update()
     {
         CheckForMovementStatus();
-        print("running timer +++++" + runningTimer);
+
+        if (playerTouchingGround == true)
+        {
+            JumpUp();
+        }
+        
     }
 
-	// Update is called once per frame
-	void FixedUpdate ()
+    // Update is called once per frame
+    void FixedUpdate ()
     {
+        TouchingGroundChecker();
         PlayerMovement();
+    }
+
+    void TouchingGroundChecker()
+    {
+        raylength = myCapsule.height / 2 + 0.450f;
+        Ray groundCheckingRay = new Ray(transform.position, Vector3.down);
+        RaycastHit whatWasHit = new RaycastHit();
+        Physics.Raycast(groundCheckingRay, out whatWasHit, raylength);
+
+        Debug.DrawRay(transform.position, Vector3.down * (raylength));
+
+        if (whatWasHit.collider != null)
+        {
+            if (whatWasHit.collider.tag == "Ground")
+            {
+                playerTouchingGround = true;
+            }
+
+        }
+
+        else if(whatWasHit.collider == null)
+        {
+            Debug.LogWarning("Not Touching Ground");
+            playerTouchingGround = false;
+        }
+    }
+
+    void JumpUp()
+    {
+        
+        
+        
+
+
+
+        foreach (KeyCode item in JumpKeys)
+        {
+            if (Input.GetKeyDown(item))
+            {
+                rb3d.AddForce(jumpingForce);
+                break;
+            }
+        }
     }
 
     void ReSetMovementStatusValues()
@@ -123,7 +183,6 @@ public class PlayerBehaviour : MonoBehaviour {
                 {
                     Accelerating = false;
                 }
-
                 break;
             }
             else
@@ -183,6 +242,8 @@ public class PlayerBehaviour : MonoBehaviour {
 
             speedLimiter.x = rb3d.velocity.x;
 
+            speedLimiter.y = rb3d.velocity.y;
+
             rb3d.velocity = speedLimiter;
         }
         movementForce = new Vector3(0, 0, 0); 
@@ -203,9 +264,9 @@ public class PlayerBehaviour : MonoBehaviour {
                 speedLimiter.x = speedLimiter.x * xMaxSpeed * xMovement;
 
                 speedLimiter.z = rb3d.velocity.z;
-
+                speedLimiter.y = rb3d.velocity.y;
+                    
                 rb3d.velocity = speedLimiter;
-
                 currentXSpeed = rb3d.velocity.x;
             }
            
@@ -214,10 +275,11 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             speedDecrementer.x = BaseVector.x;
             speedDecrementer.x = currentXSpeed * speedMultiplierWhenNotMoving;
-
             speedDecrementer.z = rb3d.velocity.z;
-
             currentXSpeed = speedDecrementer.x;
+
+            speedDecrementer.y = rb3d.velocity.y;
+
             rb3d.velocity = speedDecrementer;
 
         }
