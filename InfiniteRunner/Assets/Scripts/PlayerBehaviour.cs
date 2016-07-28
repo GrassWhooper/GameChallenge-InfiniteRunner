@@ -11,10 +11,10 @@ public class PlayerBehaviour : MonoBehaviour {
     movementStatuses playerStatus;
 
     [Tooltip(" Force to be put into {X} Direction when moving ")]
-    public float speed = 30;
+    public float xSpeed = 30;
 
     [Tooltip("maximum speed on the {X} Direction")]
-    public float maxSpeed = 5f;
+    public float xMaxSpeed = 5f;
     
     [Tooltip("Auto Move Force put into the {Z} Direction")]
     public float autoMoveSpeed = 30;
@@ -30,12 +30,17 @@ public class PlayerBehaviour : MonoBehaviour {
 
     [Tooltip("How Much To Multiply everything when slowing down{Suggested Between 0.001 and 0.999} ")]
     public float slowDownMultiplier = 0.5f;
-        
+
+    [Tooltip("how long the player can keep accelerating his speed")]
+    public float runningTimer = 4f;
+    
+
+    float resetRunningTimer,resetRunningCoolDown;
     float xMovement;
     Rigidbody rb3d;
     Vector3 BaseVector;
     float currentXSpeed;
-    float initalSpeed, initalMaxSpeed, initalAutoMovespeed, initalMaxAutoMoveSpeed;
+    float initalXSpeed, initalXMaxSpeed, initalAutoMovespeed, initalMaxAutoMoveSpeed;
     [Tooltip("Select Keys For Each Action")]
     public List<KeyCode> JumpKeys , AccelerateKeys, SlowDownKeys;
 
@@ -48,27 +53,31 @@ public class PlayerBehaviour : MonoBehaviour {
         playerStatus = movementStatuses.NormalMovement;
 
 
-        initalSpeed = speed;
-        initalMaxSpeed = maxSpeed;
+        initalXSpeed = xSpeed;
+        initalXMaxSpeed = xMaxSpeed;
         initalAutoMovespeed = autoMoveSpeed;
         initalMaxAutoMoveSpeed = maxAutoMoveSpeed;
+
+        
+        resetRunningTimer = runningTimer;
     }
 
     void Update()
     {
         CheckForMovementStatus();
+        print("running timer +++++" + runningTimer);
     }
 
 	// Update is called once per frame
 	void FixedUpdate ()
     {
         PlayerMovement();
-        print(rb3d.velocity);
     }
+
     void ReSetMovementStatusValues()
     {
-        speed = initalSpeed;
-        maxSpeed = initalMaxSpeed;
+        xSpeed = initalXSpeed;
+        xMaxSpeed = initalXMaxSpeed;
         autoMoveSpeed = initalAutoMovespeed;
         maxAutoMoveSpeed = initalMaxAutoMoveSpeed;
     }
@@ -78,19 +87,20 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             ReSetMovementStatusValues();
         }
-        else if (playerStatus == movementStatuses.AcceleratedMovement)
+        else if (playerStatus == movementStatuses.AcceleratedMovement )
         {
-            speed = accelerationMultiplier * initalSpeed;
-            maxSpeed = accelerationMultiplier * initalMaxSpeed;
+            xSpeed = accelerationMultiplier * initalXSpeed;
+            xMaxSpeed = accelerationMultiplier * initalXMaxSpeed;
             autoMoveSpeed = accelerationMultiplier * initalAutoMovespeed;
             maxAutoMoveSpeed = accelerationMultiplier * initalMaxAutoMoveSpeed;
         }
         else if (playerStatus==movementStatuses.SlowedDownMovement)
         {
-            speed = slowDownMultiplier * initalSpeed;
-            maxSpeed = slowDownMultiplier * initalMaxSpeed;
+            xSpeed = initalXSpeed;
+            xMaxSpeed = slowDownMultiplier * initalXMaxSpeed;
             autoMoveSpeed = slowDownMultiplier * initalAutoMovespeed;
-            maxAutoMoveSpeed = slowDownMultiplier * initalMaxAutoMoveSpeed;
+            //maxAutoMoveSpeed = slowDownMultiplier * initalMaxAutoMoveSpeed; //will snap to half
+            maxAutoMoveSpeed = initalMaxAutoMoveSpeed; //will snap back to initial automove Z direction speed.
         }
 
     }
@@ -107,6 +117,13 @@ public class PlayerBehaviour : MonoBehaviour {
                 playerStatus = movementStatuses.AcceleratedMovement;
                 Accelerating = true;
 
+                runningTimer -= Time.deltaTime;
+
+                if (runningTimer <= 0f)
+                {
+                    Accelerating = false;
+                }
+
                 break;
             }
             else
@@ -120,6 +137,12 @@ public class PlayerBehaviour : MonoBehaviour {
             {
                 playerStatus = movementStatuses.SlowedDownMovement;
                 SlowingDown = true;
+
+                if (runningTimer < resetRunningTimer)
+                {
+                    runningTimer += 2*Time.deltaTime;
+                }
+
                 break;
             }
             else
@@ -130,6 +153,10 @@ public class PlayerBehaviour : MonoBehaviour {
         if (!Accelerating && !SlowingDown)
         {
             playerStatus = movementStatuses.NormalMovement;
+            if (runningTimer<resetRunningTimer)
+            {
+                runningTimer += Time.deltaTime;
+            }
         }
     }
 
@@ -162,18 +189,18 @@ public class PlayerBehaviour : MonoBehaviour {
         // {X} Movement Starts Here
         if (xMovement != 0)
         {
-            if (Mathf.Abs(rb3d.velocity.x) < maxSpeed)
+            if (Mathf.Abs(rb3d.velocity.x) < xMaxSpeed)
             {
                 movementForce.x = BaseVector.x;
-                movementForce = movementForce * xMovement * speed;
+                movementForce = movementForce * xMovement * xSpeed;
 
                 rb3d.AddForce(movementForce);
                 currentXSpeed = rb3d.velocity.x;
             }
-            else if (Mathf.Abs(rb3d.velocity.x) >= maxSpeed)
+            else if (Mathf.Abs(rb3d.velocity.x) >= xMaxSpeed)
             {
                 speedLimiter.x = BaseVector.x;
-                speedLimiter.x = speedLimiter.x * maxSpeed * xMovement;
+                speedLimiter.x = speedLimiter.x * xMaxSpeed * xMovement;
 
                 speedLimiter.z = rb3d.velocity.z;
 
