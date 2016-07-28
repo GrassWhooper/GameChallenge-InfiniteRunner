@@ -6,8 +6,9 @@ using System.Linq;
 
 public class PlayerBehaviour : MonoBehaviour {
 
-    enum movementStatuses {NormalMovement , AcceleratedMovement, SlowedDownMovement  };
-    
+    enum movementStatuses {NormalMovement , AcceleratedMovement, SlowedDownMovement, MidAir  };
+    enum groundTouchingStatuses {TouchingGround , NotTouchingGround }
+
     movementStatuses playerStatus;
 
     [Tooltip(" Force to be put into {X} Direction when moving ")]
@@ -35,13 +36,25 @@ public class PlayerBehaviour : MonoBehaviour {
     public float runningTimer = 4f;
 
     [Tooltip("this is the force in which will be added when you use jump keys.")]
-    public Vector3 jumpingForce = new Vector3(0,450f,0);
+    public Vector3 jumpForce = new Vector3(0,450f,0);
 
 
-    [Tooltip("DistanceCheck Between Player And Ground. Suggested {Half the heigth of the capsule collider+ something}")]
+    [Tooltip("DistanceCheck Between Player And Ground. Suggested {Half the heigth of the capsule collider + something}")]
     public float raylength = 0;
 
+    [Tooltip("how many times the player can jump mid air")]
+    public float midAirJumpNumber = 2f;
 
+    [Tooltip("the number of which the {jumpForce} is multiplied by in each jump in mid air")]
+    public float midAirJumpMultiplier=0.5f;
+
+    [Tooltip("the minimum jumpingForce, that can be reached with mid air jumps.")]
+    public Vector3 minJumpingForce=new Vector3(0,200,0);
+
+
+    bool midAirCalculations = false;
+    Vector3 initalJumpForce;
+    float jumpsCounter=0;
     bool playerTouchingGround;
     float resetRunningTimer,resetRunningCoolDown;
     CapsuleCollider myCapsule;
@@ -50,6 +63,7 @@ public class PlayerBehaviour : MonoBehaviour {
     Vector3 BaseVector;
     float currentXSpeed;
     float initalXSpeed, initalXMaxSpeed, initalAutoMovespeed, initalMaxAutoMoveSpeed;
+    groundTouchingStatuses groundTouchStatus;
     [Tooltip("Select Keys For Each Action")]
     public List<KeyCode> JumpKeys , AccelerateKeys, SlowDownKeys;
 
@@ -67,21 +81,29 @@ public class PlayerBehaviour : MonoBehaviour {
         initalAutoMovespeed = autoMoveSpeed;
         initalMaxAutoMoveSpeed = maxAutoMoveSpeed;
 
-        
+        initalJumpForce = jumpForce;
         resetRunningTimer = runningTimer;
-
+        jumpsCounter = 0;
         myCapsule = GetComponent<CapsuleCollider>();
+
+
+        groundTouchStatus = new groundTouchingStatuses();
+        groundTouchStatus = groundTouchingStatuses.TouchingGround;
     }
 
     void Update()
     {
         CheckForMovementStatus();
-
         if (playerTouchingGround == true)
         {
             JumpUp();
         }
-        
+
+        if (groundTouchStatus == groundTouchingStatuses.NotTouchingGround)
+        {
+            DoMidAirJumps();
+        }
+
     }
 
     // Update is called once per frame
@@ -89,6 +111,29 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         TouchingGroundChecker();
         PlayerMovement();
+        print(rb3d.velocity);
+
+    }
+
+    void DoMidAirJumps()
+    {
+        if (jumpsCounter> midAirJumpNumber)
+        {
+
+        }
+        else
+        {
+            if (midAirCalculations == true)
+            {
+                midAirCalculations = false;
+                jumpForce = jumpForce * midAirJumpMultiplier;
+                if (jumpForce.y <= minJumpingForce.y)
+                {
+                    jumpForce = minJumpingForce;
+                }
+            }
+            JumpUp();
+        }
     }
 
     void TouchingGroundChecker()
@@ -99,36 +144,35 @@ public class PlayerBehaviour : MonoBehaviour {
         Physics.Raycast(groundCheckingRay, out whatWasHit, raylength);
 
         Debug.DrawRay(transform.position, Vector3.down * (raylength));
-
+    
         if (whatWasHit.collider != null)
         {
             if (whatWasHit.collider.tag == "Ground")
             {
                 playerTouchingGround = true;
+                jumpForce = initalJumpForce;
+                jumpsCounter = 0;
+                groundTouchStatus = groundTouchingStatuses.TouchingGround;
             }
-
         }
-
-        else if(whatWasHit.collider == null)
+        else if (whatWasHit.collider == null)
         {
-            Debug.LogWarning("Not Touching Ground");
+            //Debug.LogWarning("Not Touching Ground");
             playerTouchingGround = false;
+            groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
         }
-    }
 
+    }
     void JumpUp()
     {
-        
-        
-        
-
-
-
         foreach (KeyCode item in JumpKeys)
         {
             if (Input.GetKeyDown(item))
             {
-                rb3d.AddForce(jumpingForce);
+                rb3d.AddForce(jumpForce);
+                groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
+                midAirCalculations = true;
+                jumpsCounter += 1;
                 break;
             }
         }
@@ -159,8 +203,8 @@ public class PlayerBehaviour : MonoBehaviour {
             xSpeed = initalXSpeed;
             xMaxSpeed = slowDownMultiplier * initalXMaxSpeed;
             autoMoveSpeed = slowDownMultiplier * initalAutoMovespeed;
-            //maxAutoMoveSpeed = slowDownMultiplier * initalMaxAutoMoveSpeed; //will snap to half
-            maxAutoMoveSpeed = initalMaxAutoMoveSpeed; //will snap back to initial automove Z direction speed.
+            maxAutoMoveSpeed = slowDownMultiplier * initalMaxAutoMoveSpeed; //will snap to half
+            //maxAutoMoveSpeed = initalMaxAutoMoveSpeed; //will snap back to initial automove Z direction speed.
         }
 
     }
