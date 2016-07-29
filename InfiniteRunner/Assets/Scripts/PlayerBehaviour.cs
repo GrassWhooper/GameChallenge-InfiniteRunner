@@ -51,7 +51,7 @@ public class PlayerBehaviour : MonoBehaviour {
     [Tooltip("the minimum jumpingForce, that can be reached with mid air jumps.")]
     public Vector3 minJumpingForce=new Vector3(0,200,0);
 
-
+    bool hittingRoadBlock = true;
     bool midAirCalculations = false;
     Vector3 initalJumpForce;
     float jumpsCounter=0;
@@ -105,16 +105,57 @@ public class PlayerBehaviour : MonoBehaviour {
         }
 
     }
-
+    
     // Update is called once per frame
     void FixedUpdate ()
     {
         TouchingGroundChecker();
+        HittingRoadBlocks();
         PlayerMovement();
-        print(rb3d.velocity);
+        
 
     }
 
+    void HittingRoadBlocks()
+    {
+        Ray roadBlocksRay = new Ray(transform.position,Vector3.forward);
+        RaycastHit whatWasHit = new RaycastHit();
+        float maxDistance = 5f;
+
+        Physics.SphereCast(roadBlocksRay, myCapsule.radius + 0.5f, out whatWasHit, maxDistance);
+
+        Vector3 aboveHead = transform.position;
+        aboveHead.y = aboveHead.y + ((myCapsule.height / 2) - 0.1f);
+        Vector3 underHead = transform.position;
+        underHead.y = underHead.y - ((myCapsule.height / 2) - 0.1f);
+
+        Debug.DrawRay(new Vector3(aboveHead.x, aboveHead.y, aboveHead.z + maxDistance), Vector3.forward * myCapsule.radius);
+        Debug.DrawRay(new Vector3(underHead.x, underHead.y, underHead.z + maxDistance), Vector3.forward * myCapsule.radius);
+        Vector3 v = transform.position;
+        v.z = v.z + maxDistance;
+        Debug.DrawRay(v, Vector3.forward * myCapsule.radius);
+
+        Physics.CapsuleCast(aboveHead, underHead, myCapsule.radius + 0.5f, transform.forward, out whatWasHit, maxDistance);
+
+        //rb3d.SweepTest(rb3d.velocity.normalized, out whatWasHit, maxDistance);
+
+        if (whatWasHit.collider != null)
+        {
+            if (whatWasHit.collider.gameObject.tag== "RoadBlocks")
+            {
+                hittingRoadBlock = true;
+                //print("hittingRoadBlock = " + hittingRoadBlock);
+            }
+        }
+        else
+        {
+            hittingRoadBlock = false;
+            //print("hittingRoadBlock = " + hittingRoadBlock);
+        }
+
+
+    }
+    
     void DoMidAirJumps()
     {
         if (jumpsCounter> midAirJumpNumber)
@@ -143,7 +184,7 @@ public class PlayerBehaviour : MonoBehaviour {
         RaycastHit whatWasHit = new RaycastHit();
         Physics.Raycast(groundCheckingRay, out whatWasHit, raylength);
 
-        Debug.DrawRay(transform.position, Vector3.down * (raylength));
+        //Debug.DrawRay(transform.position, Vector3.down * (raylength));
     
         if (whatWasHit.collider != null)
         {
@@ -276,7 +317,15 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             movementForce.z = BaseVector.z;
             movementForce = movementForce * autoMoveSpeed;
-
+            if (hittingRoadBlock==true)
+            {
+                movementForce.z = movementForce.z *0f;
+                Vector3 altSpeed = rb3d.velocity;
+                altSpeed.z = altSpeed.z* 0f;
+                rb3d.velocity = altSpeed;
+                transform.position = new Vector3(transform.position.x,transform.position.y,transform.position.z);
+                print("im here");
+            }
             rb3d.AddForce(movementForce);
         }
         else if (Mathf.Abs(rb3d.velocity.z) >= maxAutoMoveSpeed)
@@ -287,7 +336,12 @@ public class PlayerBehaviour : MonoBehaviour {
             speedLimiter.x = rb3d.velocity.x;
 
             speedLimiter.y = rb3d.velocity.y;
-
+            if (hittingRoadBlock == true)
+            {
+                speedLimiter.z = speedLimiter.z* 0f;
+                print("at max speed stopping");
+                transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+            }
             rb3d.velocity = speedLimiter;
         }
         movementForce = new Vector3(0, 0, 0); 
