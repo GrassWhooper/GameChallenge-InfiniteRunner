@@ -103,7 +103,6 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             DoMidAirJumps();
         }
-
     }
     
     // Update is called once per frame
@@ -112,15 +111,14 @@ public class PlayerBehaviour : MonoBehaviour {
         TouchingGroundChecker();
         HittingRoadBlocks();
         PlayerMovement();
-        
-
+        print(rb3d.velocity);
     }
 
     void HittingRoadBlocks()
     {
         Ray roadBlocksRay = new Ray(transform.position,Vector3.forward);
         RaycastHit whatWasHit = new RaycastHit();
-        float maxDistance = 5f;
+        float maxDistance = 0.0550f;
 
         Physics.SphereCast(roadBlocksRay, myCapsule.radius + 0.5f, out whatWasHit, maxDistance);
 
@@ -144,13 +142,11 @@ public class PlayerBehaviour : MonoBehaviour {
             if (whatWasHit.collider.gameObject.tag== "RoadBlocks")
             {
                 hittingRoadBlock = true;
-                //print("hittingRoadBlock = " + hittingRoadBlock);
             }
         }
         else
         {
             hittingRoadBlock = false;
-            //print("hittingRoadBlock = " + hittingRoadBlock);
         }
 
 
@@ -323,8 +319,8 @@ public class PlayerBehaviour : MonoBehaviour {
                 Vector3 altSpeed = rb3d.velocity;
                 altSpeed.z = altSpeed.z* 0f;
                 rb3d.velocity = altSpeed;
-                transform.position = new Vector3(transform.position.x,transform.position.y,transform.position.z);
-                print("im here");
+                
+                
             }
             rb3d.AddForce(movementForce);
         }
@@ -339,8 +335,6 @@ public class PlayerBehaviour : MonoBehaviour {
             if (hittingRoadBlock == true)
             {
                 speedLimiter.z = speedLimiter.z* 0f;
-                print("at max speed stopping");
-                transform.position = new Vector3(transform.position.x, transform.position.y, transform.position.z);
             }
             rb3d.velocity = speedLimiter;
         }
