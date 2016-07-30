@@ -103,6 +103,7 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             DoMidAirJumps();
         }
+        print(rb3d.velocity);
     }
     
     // Update is called once per frame
@@ -111,7 +112,6 @@ public class PlayerBehaviour : MonoBehaviour {
         TouchingGroundChecker();
         HittingRoadBlocks();
         PlayerMovement();
-        print(rb3d.velocity);
     }
 
     void HittingRoadBlocks()
@@ -180,7 +180,7 @@ public class PlayerBehaviour : MonoBehaviour {
         RaycastHit whatWasHit = new RaycastHit();
         Physics.Raycast(groundCheckingRay, out whatWasHit, raylength);
 
-        //Debug.DrawRay(transform.position, Vector3.down * (raylength));
+        Debug.DrawRay(transform.position, Vector3.down * (raylength));
     
         if (whatWasHit.collider != null)
         {
@@ -200,16 +200,22 @@ public class PlayerBehaviour : MonoBehaviour {
         }
 
     }
+
+    public void JumpCalculations()
+    {
+        rb3d.AddForce(jumpForce);
+        groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
+        midAirCalculations = true;
+        jumpsCounter += 1;
+    }
+
     void JumpUp()
     {
         foreach (KeyCode item in JumpKeys)
         {
-            if (Input.GetKeyDown(item))
+            if (Input.GetKeyDown(item) || CrossPlatformInputManager.GetButtonDown("myJump"))
             {
-                rb3d.AddForce(jumpForce);
-                groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
-                midAirCalculations = true;
-                jumpsCounter += 1;
+                JumpCalculations();
                 break;
             }
         }
@@ -253,7 +259,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
         foreach (KeyCode item in AccelerateKeys)
         {
-            if (Input.GetKey(item))
+            if (Input.GetKey(item) || CrossPlatformInputManager.GetAxis("Vertical")>0)
             {
                 playerStatus = movementStatuses.AcceleratedMovement;
                 Accelerating = true;
@@ -273,7 +279,7 @@ public class PlayerBehaviour : MonoBehaviour {
         }
         foreach (KeyCode item in SlowDownKeys)
         {
-            if (Input.GetKey(item))
+            if (Input.GetKey(item) || CrossPlatformInputManager.GetAxis("Vertical") < 0)
             {
                 playerStatus = movementStatuses.SlowedDownMovement;
                 SlowingDown = true;
