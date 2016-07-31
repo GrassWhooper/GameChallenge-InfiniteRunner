@@ -103,7 +103,6 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             DoMidAirJumps();
         }
-        print(rb3d.velocity);
     }
     
     // Update is called once per frame
