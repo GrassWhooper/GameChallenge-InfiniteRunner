@@ -3,6 +3,26 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class PoolsCreator : MonoBehaviour {
+    public static PoolsCreator poolCreator;
+    public GameObject GetInActiveObjectInPool(List< GameObject> pool , bool poolWillGrow , GameObject addMoreOfThis)
+    {
+        foreach (GameObject item in pool)
+        {
+            if (!item.activeInHierarchy)
+            {
+                return item;
+            }
+        }
+
+        if (poolWillGrow == true)
+        {
+            GameObject cloned = Instantiate(addMoreOfThis);
+            pool.Add(cloned);
+            cloned.SetActive(false);
+            return cloned;
+        }
+        return null;
+    }
 
     public void DeActivatePool(List<GameObject> pool)
     {
@@ -19,7 +39,7 @@ public class PoolsCreator : MonoBehaviour {
         {
             poolToBeFilled.Add(OfThisObj);
         }
-        print("Created A Pool Filled With: " + OfThisObj.name +" with count of: "+ poolToBeFilled.Count);
+        //print("Created A Pool Filled With: " + OfThisObj.name +" with count of: "+ poolToBeFilled.Count);
         return poolToBeFilled;
     }
 
@@ -63,5 +83,8 @@ public class PoolsCreator : MonoBehaviour {
             Instantiate(item, new Vector3(0, 0, 0), Quaternion.identity);
         }
     }
-
+    void Awake()
+    {
+        poolCreator = this;
+    }
 }
