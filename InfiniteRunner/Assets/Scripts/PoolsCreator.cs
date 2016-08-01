@@ -4,6 +4,14 @@ using System.Collections.Generic;
 
 public class PoolsCreator : MonoBehaviour {
 
+    public void DeActivatePool(List<GameObject> pool)
+    {
+        foreach (GameObject item in pool)
+        {
+            item.SetActive(false);
+        }
+    }
+
     public List<GameObject> CreatPoolSpace(GameObject OfThisObj, int withThisAmount)
     {
         List<GameObject> poolToBeFilled = new List<GameObject>();
