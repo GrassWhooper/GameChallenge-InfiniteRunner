@@ -5,33 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 
 public class PlayerBehaviour : MonoBehaviour {
-
-    enum movementStatuses {NormalMovement , AcceleratedMovement, SlowedDownMovement, MidAir  };
+    public static PlayerBehaviour playerBehaviour;
     enum groundTouchingStatuses {TouchingGround , NotTouchingGround }
 
-    movementStatuses playerStatus;
-
-    [Tooltip(" Force to be put into {X} Direction when moving ")]
-    public float xSpeed = 30;
-
-    [Tooltip("maximum speed on the {X} Direction")]
-    public float xMaxSpeed = 5f;
+    public Rigidbody rb3d;
     
-    [Tooltip("Auto Move Force put into the {Z} Direction")]
-    public float autoMoveSpeed = 30;
-
-    [Tooltip("Maximum Speed in the {Z} Direction")]
-    public float maxAutoMoveSpeed=60f;
-
-    [Tooltip("this is applied when not moving above one, speed will increase")]
-    public float speedMultiplierWhenNotMoving = 0.9f;
-
-    [Tooltip("How Much To Multiply everything when accelerating ")]
-    public float accelerationMultiplier = 2f;
-
-    [Tooltip("How Much To Multiply everything when slowing down{Suggested Between 0.001 and 0.999} ")]
-    public float slowDownMultiplier = 0.5f;
-
     [Tooltip("how long the player can keep accelerating his speed")]
     public float runningTimer = 4f;
 
@@ -51,35 +29,27 @@ public class PlayerBehaviour : MonoBehaviour {
     [Tooltip("the minimum jumpingForce, that can be reached with mid air jumps.")]
     public Vector3 minJumpingForce=new Vector3(0,200,0);
 
-    bool hittingRoadBlock = true;
+    public bool hittingRoadBlock = true;
+
     bool midAirCalculations = false;
     Vector3 initalJumpForce;
     float jumpsCounter=0;
-    bool playerTouchingGround;
+
     float resetRunningTimer,resetRunningCoolDown;
     CapsuleCollider myCapsule;
-    float xMovement;
-    Rigidbody rb3d;
-    Vector3 BaseVector;
-    float currentXSpeed;
-    float initalXSpeed, initalXMaxSpeed, initalAutoMovespeed, initalMaxAutoMoveSpeed;
     groundTouchingStatuses groundTouchStatus;
     [Tooltip("Select Keys For Each Action")]
     public List<KeyCode> JumpKeys , AccelerateKeys, SlowDownKeys;
+
+    void Awake()
+    {
+        playerBehaviour = this;
+    }
 
     // Use this for initialization
     void Start ()
     {
         rb3d = GetComponent<Rigidbody>();
-        BaseVector = new Vector3(1, 1, 1);
-        playerStatus = new movementStatuses();
-        playerStatus = movementStatuses.NormalMovement;
-
-
-        initalXSpeed = xSpeed;
-        initalXMaxSpeed = xMaxSpeed;
-        initalAutoMovespeed = autoMoveSpeed;
-        initalMaxAutoMoveSpeed = maxAutoMoveSpeed;
 
         initalJumpForce = jumpForce;
         resetRunningTimer = runningTimer;
@@ -94,7 +64,7 @@ public class PlayerBehaviour : MonoBehaviour {
     void Update()
     {
         CheckForMovementStatus();
-        if (playerTouchingGround == true)
+        if (groundTouchStatus == groundTouchingStatuses.TouchingGround)
         {
             JumpUp();
         }
@@ -110,7 +80,6 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         TouchingGroundChecker();
         HittingRoadBlocks();
-        PlayerMovement();
     }
 
     void HittingRoadBlocks()
@@ -185,7 +154,6 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             if (whatWasHit.collider.tag == "Ground")
             {
-                playerTouchingGround = true;
                 jumpForce = initalJumpForce;
                 jumpsCounter = 0;
                 groundTouchStatus = groundTouchingStatuses.TouchingGround;
@@ -194,18 +162,9 @@ public class PlayerBehaviour : MonoBehaviour {
         else if (whatWasHit.collider == null)
         {
             //Debug.LogWarning("Not Touching Ground");
-            playerTouchingGround = false;
             groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
         }
 
-    }
-
-    public void JumpCalculations()
-    {
-        rb3d.AddForce(jumpForce);
-        groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
-        midAirCalculations = true;
-        jumpsCounter += 1;
     }
 
     void JumpUp()
@@ -214,43 +173,14 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             if (Input.GetKeyDown(item) || CrossPlatformInputManager.GetButtonDown("myJump"))
             {
-                JumpCalculations();
+                rb3d.AddForce(jumpForce);
+                groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
+                midAirCalculations = true;
+                jumpsCounter += 1;
                 break;
             }
         }
     }
-
-    void ReSetMovementStatusValues()
-    {
-        xSpeed = initalXSpeed;
-        xMaxSpeed = initalXMaxSpeed;
-        autoMoveSpeed = initalAutoMovespeed;
-        maxAutoMoveSpeed = initalMaxAutoMoveSpeed;
-    }
-    void SetMovementStatusValues()
-    {
-        if (playerStatus == movementStatuses.NormalMovement)
-        {
-            ReSetMovementStatusValues();
-        }
-        else if (playerStatus == movementStatuses.AcceleratedMovement )
-        {
-            xSpeed = accelerationMultiplier * initalXSpeed;
-            xMaxSpeed = accelerationMultiplier * initalXMaxSpeed;
-            autoMoveSpeed = accelerationMultiplier * initalAutoMovespeed;
-            maxAutoMoveSpeed = accelerationMultiplier * initalMaxAutoMoveSpeed;
-        }
-        else if (playerStatus==movementStatuses.SlowedDownMovement)
-        {
-            xSpeed = initalXSpeed;
-            xMaxSpeed = slowDownMultiplier * initalXMaxSpeed;
-            autoMoveSpeed = slowDownMultiplier * initalAutoMovespeed;
-            maxAutoMoveSpeed = slowDownMultiplier * initalMaxAutoMoveSpeed; //will snap to half
-            //maxAutoMoveSpeed = initalMaxAutoMoveSpeed; //will snap back to initial automove Z direction speed.
-        }
-
-    }
-
     void CheckForMovementStatus()
     {
         bool Accelerating= false;
@@ -260,7 +190,7 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             if (Input.GetKey(item) || CrossPlatformInputManager.GetAxis("Vertical")>0)
             {
-                playerStatus = movementStatuses.AcceleratedMovement;
+                PlayerMovementBehaviour.playerMovementBehaviour.playerStatus = PlayerMovementBehaviour.movementStatuses.AcceleratedMovement;
                 Accelerating = true;
 
                 runningTimer -= Time.deltaTime;
@@ -280,7 +210,8 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             if (Input.GetKey(item) || CrossPlatformInputManager.GetAxis("Vertical") < 0)
             {
-                playerStatus = movementStatuses.SlowedDownMovement;
+                PlayerMovementBehaviour.playerMovementBehaviour.playerStatus 
+                    = PlayerMovementBehaviour.movementStatuses.SlowedDownMovement;
                 SlowingDown = true;
 
                 if (runningTimer < resetRunningTimer)
@@ -297,88 +228,11 @@ public class PlayerBehaviour : MonoBehaviour {
         }
         if (!Accelerating && !SlowingDown)
         {
-            playerStatus = movementStatuses.NormalMovement;
+            PlayerMovementBehaviour.playerMovementBehaviour.playerStatus = PlayerMovementBehaviour.movementStatuses.NormalMovement;
             if (runningTimer<resetRunningTimer)
             {
                 runningTimer += Time.deltaTime;
             }
-        }
-    }
-
-    void PlayerMovement()
-    {
-        xMovement = CrossPlatformInputManager.GetAxis("Horizontal");
-        Vector3 movementForce = new Vector3(0, 0, 0);
-        Vector3 speedLimiter = new Vector3(0, 0, 0);
-        Vector3 speedDecrementer = new Vector3();
-
-        SetMovementStatusValues();
-
-        if (Mathf.Abs(rb3d.velocity.z) < (maxAutoMoveSpeed))
-        {
-            movementForce.z = BaseVector.z;
-            movementForce = movementForce * autoMoveSpeed;
-            if (hittingRoadBlock==true)
-            {
-                movementForce.z = movementForce.z *0f;
-                Vector3 altSpeed = rb3d.velocity;
-                altSpeed.z = altSpeed.z* 0f;
-                rb3d.velocity = altSpeed;
-                
-                
-            }
-            rb3d.AddForce(movementForce);
-        }
-        else if (Mathf.Abs(rb3d.velocity.z) >= maxAutoMoveSpeed)
-        {
-            speedLimiter.z = BaseVector.z;
-            speedLimiter = speedLimiter * maxAutoMoveSpeed;
-
-            speedLimiter.x = rb3d.velocity.x;
-
-            speedLimiter.y = rb3d.velocity.y;
-            if (hittingRoadBlock == true)
-            {
-                speedLimiter.z = speedLimiter.z* 0f;
-            }
-            rb3d.velocity = speedLimiter;
-        }
-        movementForce = new Vector3(0, 0, 0); 
-        // {X} Movement Starts Here
-        if (xMovement != 0)
-        {
-            if (Mathf.Abs(rb3d.velocity.x) < xMaxSpeed)
-            {
-                movementForce.x = BaseVector.x;
-                movementForce = movementForce * xMovement * xSpeed;
-
-                rb3d.AddForce(movementForce);
-                currentXSpeed = rb3d.velocity.x;
-            }
-            else if (Mathf.Abs(rb3d.velocity.x) >= xMaxSpeed)
-            {
-                speedLimiter.x = BaseVector.x;
-                speedLimiter.x = speedLimiter.x * xMaxSpeed * xMovement;
-
-                speedLimiter.z = rb3d.velocity.z;
-                speedLimiter.y = rb3d.velocity.y;
-                    
-                rb3d.velocity = speedLimiter;
-                currentXSpeed = rb3d.velocity.x;
-            }
-           
-        }
-        if (xMovement == 0)
-        {
-            speedDecrementer.x = BaseVector.x;
-            speedDecrementer.x = currentXSpeed * speedMultiplierWhenNotMoving;
-            speedDecrementer.z = rb3d.velocity.z;
-            currentXSpeed = speedDecrementer.x;
-
-            speedDecrementer.y = rb3d.velocity.y;
-
-            rb3d.velocity = speedDecrementer;
-
         }
     }
 }
