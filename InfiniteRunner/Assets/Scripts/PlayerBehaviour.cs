@@ -8,32 +8,17 @@ public class PlayerBehaviour : MonoBehaviour {
     public static PlayerBehaviour playerBehaviour;
     enum groundTouchingStatuses {TouchingGround , NotTouchingGround }
 
-    public Rigidbody rb3d;
+    Rigidbody rb3d;
     
     [Tooltip("how long the player can keep accelerating his speed")]
     public float runningTimer = 4f;
-
-    [Tooltip("this is the force in which will be added when you use jump keys.")]
-    public Vector3 jumpForce = new Vector3(0,450f,0);
-
-
+    
     [Tooltip("DistanceCheck Between Player And Ground. Suggested {Half the heigth of the capsule collider + something}")]
     public float raylength = 0;
 
-    [Tooltip("how many times the player can jump mid air")]
-    public float midAirJumpNumber = 2f;
-
-    [Tooltip("the number of which the {jumpForce} is multiplied by in each jump in mid air")]
-    public float midAirJumpMultiplier=0.5f;
-
-    [Tooltip("the minimum jumpingForce, that can be reached with mid air jumps.")]
-    public Vector3 minJumpingForce=new Vector3(0,200,0);
-
     public bool hittingRoadBlock = true;
 
-    bool midAirCalculations = false;
     Vector3 initalJumpForce;
-    float jumpsCounter=0;
 
     float resetRunningTimer,resetRunningCoolDown;
     CapsuleCollider myCapsule;
@@ -51,9 +36,8 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         rb3d = GetComponent<Rigidbody>();
 
-        initalJumpForce = jumpForce;
+        initalJumpForce = PlayerJumpBehaviour.playerJumpBehaviour.jumpForce;
         resetRunningTimer = runningTimer;
-        jumpsCounter = 0;
         myCapsule = GetComponent<CapsuleCollider>();
 
 
@@ -71,7 +55,7 @@ public class PlayerBehaviour : MonoBehaviour {
 
         if (groundTouchStatus == groundTouchingStatuses.NotTouchingGround)
         {
-            DoMidAirJumps();
+            PlayerJumpBehaviour.playerJumpBehaviour.DoMidAirJumps();
         }
     }
     
@@ -105,9 +89,10 @@ public class PlayerBehaviour : MonoBehaviour {
 
         //rb3d.SweepTest(rb3d.velocity.normalized, out whatWasHit, maxDistance);
 
+
         if (whatWasHit.collider != null)
         {
-            if (whatWasHit.collider.gameObject.tag== "RoadBlocks")
+            if (whatWasHit.collider.gameObject.tag == "RoadBlocks")
             {
                 hittingRoadBlock = true;
             }
@@ -117,33 +102,10 @@ public class PlayerBehaviour : MonoBehaviour {
             hittingRoadBlock = false;
         }
 
-
     }
-    
-    void DoMidAirJumps()
-    {
-        if (jumpsCounter> midAirJumpNumber)
-        {
-
-        }
-        else
-        {
-            if (midAirCalculations == true)
-            {
-                midAirCalculations = false;
-                jumpForce = jumpForce * midAirJumpMultiplier;
-                if (jumpForce.y <= minJumpingForce.y)
-                {
-                    jumpForce = minJumpingForce;
-                }
-            }
-            JumpUp();
-        }
-    }
-
     void TouchingGroundChecker()
     {
-        raylength = myCapsule.height / 2 + 0.450f;
+        //raylength = myCapsule.height / 2 + 0.450f; //commented out because well, in case we want to change that number. in the inespector
         Ray groundCheckingRay = new Ray(transform.position, Vector3.down);
         RaycastHit whatWasHit = new RaycastHit();
         Physics.Raycast(groundCheckingRay, out whatWasHit, raylength);
@@ -154,8 +116,8 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             if (whatWasHit.collider.tag == "Ground")
             {
-                jumpForce = initalJumpForce;
-                jumpsCounter = 0;
+                PlayerJumpBehaviour.playerJumpBehaviour.jumpForce = initalJumpForce;
+                PlayerJumpBehaviour.playerJumpBehaviour.jumpsCounter = 0;
                 groundTouchStatus = groundTouchingStatuses.TouchingGround;
             }
         }
@@ -164,19 +126,15 @@ public class PlayerBehaviour : MonoBehaviour {
             //Debug.LogWarning("Not Touching Ground");
             groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
         }
-
     }
-
-    void JumpUp()
+    public void JumpUp()
     {
         foreach (KeyCode item in JumpKeys)
         {
             if (Input.GetKeyDown(item) || CrossPlatformInputManager.GetButtonDown("myJump"))
             {
-                rb3d.AddForce(jumpForce);
+                PlayerJumpBehaviour.playerJumpBehaviour.JumpCalculations();
                 groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
-                midAirCalculations = true;
-                jumpsCounter += 1;
                 break;
             }
         }

@@ -14,10 +14,10 @@ public class PlayerMovementBehaviour : MonoBehaviour {
     public float xMaxSpeed = 5f;
 
     [Tooltip("Auto Move Force put into the {Z} Direction")]
-    public float autoMoveSpeed = 20f;
+    public float autoMoveSpeed = 10f;
 
     [Tooltip("Maximum Speed in the {Z} Direction")]
-    public float maxAutoMoveSpeed = 40f;
+    public float maxAutoMoveSpeed = 20f;
     
     [Tooltip("this is applied when not moving above one, speed will increase")]
     public float speedMultiplierWhenNotMoving = 0.9f;
@@ -30,7 +30,6 @@ public class PlayerMovementBehaviour : MonoBehaviour {
 
 
     public enum movementStatuses { NormalMovement, AcceleratedMovement, SlowedDownMovement, MidAir };
-
     public movementStatuses playerStatus;
 
     float xMovement, currentXSpeed, initalXSpeed, initalXMaxSpeed, initalAutoMovespeed, initalMaxAutoMoveSpeed;
@@ -103,10 +102,16 @@ public class PlayerMovementBehaviour : MonoBehaviour {
 
     void PlayerMovement()
     {
+        zPlayerMovement();
+        xPlayerMovement();
+        print(rb3d.velocity);
+    }
+
+    void zPlayerMovement()
+    {
         xMovement = CrossPlatformInputManager.GetAxis("Horizontal");
         Vector3 movementForce = new Vector3(0, 0, 0);
         Vector3 speedLimiter = new Vector3(0, 0, 0);
-        Vector3 speedDecrementer = new Vector3();
 
         SetMovementStatusValues();
 
@@ -120,8 +125,6 @@ public class PlayerMovementBehaviour : MonoBehaviour {
                 Vector3 altSpeed = rb3d.velocity;
                 altSpeed.z = altSpeed.z * 0f;
                 rb3d.velocity = altSpeed;
-
-
             }
             rb3d.AddForce(movementForce);
         }
@@ -142,6 +145,15 @@ public class PlayerMovementBehaviour : MonoBehaviour {
         }
         movementForce = new Vector3(0, 0, 0);
         // {X} Movement Starts Here
+       
+    }
+
+    void xPlayerMovement()
+    {
+        Vector3 speedDecrementer = new Vector3();
+        Vector3 movementForce = new Vector3(0, 0, 0);
+        Vector3 speedLimiter = new Vector3(0, 0, 0);
+
         if (xMovement != 0)
         {
             if (Mathf.Abs(rb3d.velocity.x) < xMaxSpeed)
@@ -177,6 +189,7 @@ public class PlayerMovementBehaviour : MonoBehaviour {
             rb3d.velocity = speedDecrementer;
 
         }
-    }
 
+
+    }
 }
