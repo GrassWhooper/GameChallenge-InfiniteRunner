@@ -32,8 +32,18 @@ public class PlayerMovementBehaviour : MonoBehaviour {
     public enum movementStatuses { NormalMovement, AcceleratedMovement, SlowedDownMovement, MidAir };
     public movementStatuses playerStatus;
 
-    float xMovement, currentXSpeed, initalXSpeed, initalXMaxSpeed, initalAutoMovespeed, initalMaxAutoMoveSpeed;
+    float xMovement, currentXSpeed, initalXSpeed, initalXMaxSpeed, initalAutoMovespeed, initalMaxAutoMoveSpeed, previousJumpSpeed , 
+       lastAutoMoveSpeed, lastMaxAutoMoveSpeed , percentAutoMoveSpeed, percentMaxAutoMoveSpeed;
     Vector3 BaseVector;
+    Vector3 finalForceBeforeJump;
+
+    [Tooltip("how much percent of the last {Z} AutoMoveSpeed will be decremented when mid air ")]
+    public float midAirPercentAutoMove = 10f;
+
+
+    [Tooltip("how much percent of the last {Z} MaxAutoMoveSpeed will be decremented when mid air")]
+    public float midAirPercentMaxAutoMove = 10f;
+
 
     void Awake()
     {
@@ -54,10 +64,11 @@ public class PlayerMovementBehaviour : MonoBehaviour {
         initalXMaxSpeed = xMaxSpeed;
         initalAutoMovespeed = autoMoveSpeed;
         initalMaxAutoMoveSpeed = maxAutoMoveSpeed;
+
     }
-	
-	// Update is called once per frame
-	void Update ()
+
+    // Update is called once per frame
+    void Update ()
     {
 	
 	}
@@ -65,46 +76,76 @@ public class PlayerMovementBehaviour : MonoBehaviour {
     void FixedUpdate()
     {
         PlayerMovement();
-
+    //    print(rb3d.velocity);
     }
 
 
     void SetMovementStatusValues()
     {
-        if (playerStatus == movementStatuses.NormalMovement)
+        float autoMoveComplement;
+        float maxAutoMoveComplement;
+        switch (playerStatus)
         {
-            ReSetMovementStatusValues();
-        }
-        else if (playerStatus == movementStatuses.AcceleratedMovement)
-        {
-            xSpeed = accelerationMultiplier * initalXSpeed;
-            xMaxSpeed = accelerationMultiplier * initalXMaxSpeed;
-            autoMoveSpeed = accelerationMultiplier * initalAutoMovespeed;
-            maxAutoMoveSpeed = accelerationMultiplier * initalMaxAutoMoveSpeed;
-        }
-        else if (playerStatus == movementStatuses.SlowedDownMovement)
-        {
-            xSpeed = initalXSpeed;
-            xMaxSpeed = slowDownMultiplier * initalXMaxSpeed;
-            autoMoveSpeed = slowDownMultiplier * initalAutoMovespeed;
-            maxAutoMoveSpeed = slowDownMultiplier * initalMaxAutoMoveSpeed; //will snap to half
-            //maxAutoMoveSpeed = initalMaxAutoMoveSpeed; //will snap back to initial automove Z direction speed.
+            case movementStatuses.NormalMovement:
+                ReSetMovementStatusValues();
+                break;
+            case movementStatuses.AcceleratedMovement:
+                xSpeed = accelerationMultiplier * initalXSpeed;
+                xMaxSpeed = accelerationMultiplier * initalXMaxSpeed;
+                autoMoveSpeed = accelerationMultiplier * initalAutoMovespeed;
+                maxAutoMoveSpeed = accelerationMultiplier * initalMaxAutoMoveSpeed;
+
+                autoMoveComplement = ((1-(midAirPercentAutoMove/100)))* autoMoveSpeed;
+                maxAutoMoveComplement =((1-(midAirPercentMaxAutoMove/100) ))*maxAutoMoveSpeed;
+
+                lastAutoMoveSpeed = autoMoveComplement;
+                lastMaxAutoMoveSpeed = maxAutoMoveComplement;
+
+                break;
+            case movementStatuses.SlowedDownMovement:
+                xSpeed = initalXSpeed;
+                xMaxSpeed = slowDownMultiplier * initalXMaxSpeed;
+                autoMoveSpeed = slowDownMultiplier * initalAutoMovespeed;
+                maxAutoMoveSpeed = slowDownMultiplier * initalMaxAutoMoveSpeed; //will snap to half
+
+                autoMoveComplement = ((1 - (midAirPercentAutoMove / 100))) * autoMoveSpeed;
+                maxAutoMoveComplement = ((1 - (midAirPercentMaxAutoMove / 100))) * maxAutoMoveSpeed;
+
+                lastAutoMoveSpeed = autoMoveComplement;
+                lastMaxAutoMoveSpeed = maxAutoMoveComplement;
+
+                //maxAutoMoveSpeed = initalMaxAutoMoveSpeed; //will snap back to initial automove Z direction speed.
+                break;
+            case movementStatuses.MidAir:
+                autoMoveSpeed = lastAutoMoveSpeed;
+                maxAutoMoveSpeed = lastMaxAutoMoveSpeed;
+
+                break;
+            default:
+                break;
         }
 
     }
+ 
     void ReSetMovementStatusValues()
     {
         xSpeed = initalXSpeed;
         xMaxSpeed = initalXMaxSpeed;
         autoMoveSpeed = initalAutoMovespeed;
         maxAutoMoveSpeed = initalMaxAutoMoveSpeed;
+
+        float autoMoveComplement = ((1 - (midAirPercentAutoMove / 100))) * autoMoveSpeed;
+        float maxAutoMoveComplement = ((1 - (midAirPercentMaxAutoMove / 100))) * maxAutoMoveSpeed;
+
+        lastAutoMoveSpeed = autoMoveComplement;
+        lastMaxAutoMoveSpeed = maxAutoMoveComplement;
+
     }
 
     void PlayerMovement()
     {
         zPlayerMovement();
         xPlayerMovement();
-        print(rb3d.velocity);
     }
 
     void zPlayerMovement()
@@ -115,11 +156,13 @@ public class PlayerMovementBehaviour : MonoBehaviour {
 
         SetMovementStatusValues();
 
+
+
         if (Mathf.Abs(rb3d.velocity.z) < (maxAutoMoveSpeed))
         {
             movementForce.z = BaseVector.z;
             movementForce = movementForce * autoMoveSpeed;
-            if (PlayerBehaviour.playerBehaviour.hittingRoadBlock == true)
+            if (PlayerBehaviour.playerBehaviour.hittingRoadBlock == PlayerBehaviour.HittingRoadBlock.HittingBlock)
             {
                 movementForce.z = movementForce.z * 0f;
                 Vector3 altSpeed = rb3d.velocity;
@@ -137,15 +180,13 @@ public class PlayerMovementBehaviour : MonoBehaviour {
             speedLimiter.x = rb3d.velocity.x;
 
             speedLimiter.y = rb3d.velocity.y;
-            if (PlayerBehaviour.playerBehaviour.hittingRoadBlock == true)
+            if (PlayerBehaviour.playerBehaviour.hittingRoadBlock == PlayerBehaviour.HittingRoadBlock.HittingBlock)
             {
                 speedLimiter.z = speedLimiter.z * 0f;
             }
             rb3d.velocity = speedLimiter;
         }
-        movementForce = new Vector3(0, 0, 0);
-        // {X} Movement Starts Here
-       
+
     }
 
     void xPlayerMovement()

@@ -62,7 +62,7 @@ public class PoolsCreator : MonoBehaviour {
         return BornObjectsFromPool;
     }
 
-    public void CreatePool(List<GameObject>poolToCreate , Vector3 startingLocation , string Parent)
+    public void CreateActualPool(List<GameObject>poolToCreate , Vector3 startingLocation , string Parent)
     {
         foreach (GameObject item in poolToCreate)
         {
@@ -76,7 +76,7 @@ public class PoolsCreator : MonoBehaviour {
         }
     }
 
-    public void CreatePool(List<GameObject> poolToCreate)
+    public void CreateActualPool(List<GameObject> poolToCreate)
     {
         foreach (GameObject item in poolToCreate)
         {

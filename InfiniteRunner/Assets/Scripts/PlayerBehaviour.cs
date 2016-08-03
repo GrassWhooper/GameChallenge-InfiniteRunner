@@ -6,25 +6,26 @@ using System.Linq;
 
 public class PlayerBehaviour : MonoBehaviour {
     public static PlayerBehaviour playerBehaviour;
-    enum groundTouchingStatuses {TouchingGround , NotTouchingGround }
-
-    Rigidbody rb3d;
-    
+    public enum groundTouchingStatuses {TouchingGround , NotTouchingGround }
+    public enum HittingRoadBlock {HittingBlock , NotHittingBlock }
     [Tooltip("how long the player can keep accelerating his speed")]
     public float runningTimer = 4f;
     
     [Tooltip("DistanceCheck Between Player And Ground. Suggested {Half the heigth of the capsule collider + something}")]
     public float raylength = 0;
 
-    public bool hittingRoadBlock = true;
 
     Vector3 initalJumpForce;
 
     float resetRunningTimer,resetRunningCoolDown;
     CapsuleCollider myCapsule;
-    groundTouchingStatuses groundTouchStatus;
     [Tooltip("Select Keys For Each Action")]
     public List<KeyCode> JumpKeys , AccelerateKeys, SlowDownKeys;
+
+    [Header("Do Not Touch these")]
+    public groundTouchingStatuses groundTouchStatus;
+    public HittingRoadBlock hittingRoadBlock;
+
 
     void Awake()
     {
@@ -34,7 +35,6 @@ public class PlayerBehaviour : MonoBehaviour {
     // Use this for initialization
     void Start ()
     {
-        rb3d = GetComponent<Rigidbody>();
 
         initalJumpForce = PlayerJumpBehaviour.playerJumpBehaviour.jumpForce;
         resetRunningTimer = runningTimer;
@@ -43,6 +43,8 @@ public class PlayerBehaviour : MonoBehaviour {
 
         groundTouchStatus = new groundTouchingStatuses();
         groundTouchStatus = groundTouchingStatuses.TouchingGround;
+        hittingRoadBlock = new HittingRoadBlock();
+        hittingRoadBlock = HittingRoadBlock.NotHittingBlock;
     }
 
     void Update()
@@ -64,6 +66,7 @@ public class PlayerBehaviour : MonoBehaviour {
     {
         TouchingGroundChecker();
         HittingRoadBlocks();
+        
     }
 
     void HittingRoadBlocks()
@@ -71,6 +74,16 @@ public class PlayerBehaviour : MonoBehaviour {
         Ray roadBlocksRay = new Ray(transform.position,Vector3.forward);
         RaycastHit whatWasHit = new RaycastHit();
         float maxDistance = 0.0550f;
+        switch (groundTouchStatus)
+        {
+            case groundTouchingStatuses.TouchingGround:
+                break;
+            case groundTouchingStatuses.NotTouchingGround:
+                maxDistance = maxDistance * 2;
+                break;
+            default:
+                break;
+        }
 
         Physics.SphereCast(roadBlocksRay, myCapsule.radius + 0.5f, out whatWasHit, maxDistance);
 
@@ -94,12 +107,13 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             if (whatWasHit.collider.gameObject.tag == "RoadBlocks")
             {
-                hittingRoadBlock = true;
+                hittingRoadBlock = HittingRoadBlock.HittingBlock;
             }
         }
         else
         {
-            hittingRoadBlock = false;
+            hittingRoadBlock = HittingRoadBlock.NotHittingBlock;
+            
         }
 
     }
@@ -125,6 +139,7 @@ public class PlayerBehaviour : MonoBehaviour {
         {
             //Debug.LogWarning("Not Touching Ground");
             groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
+            
         }
     }
     public void JumpUp()
@@ -135,62 +150,72 @@ public class PlayerBehaviour : MonoBehaviour {
             {
                 PlayerJumpBehaviour.playerJumpBehaviour.JumpCalculations();
                 groundTouchStatus = groundTouchingStatuses.NotTouchingGround;
+                
                 break;
             }
         }
     }
     void CheckForMovementStatus()
     {
-        bool Accelerating= false;
+
+        bool Accelerating = false;
         bool SlowingDown = false;
-
-        foreach (KeyCode item in AccelerateKeys)
+        if (groundTouchStatus == groundTouchingStatuses.TouchingGround)
         {
-            if (Input.GetKey(item) || CrossPlatformInputManager.GetAxis("Vertical")>0)
+            foreach (KeyCode item in AccelerateKeys)
             {
-                PlayerMovementBehaviour.playerMovementBehaviour.playerStatus = PlayerMovementBehaviour.movementStatuses.AcceleratedMovement;
-                Accelerating = true;
+                if (Input.GetKey(item) || CrossPlatformInputManager.GetAxis("Vertical") > 0)
+                {
+                    PlayerMovementBehaviour.playerMovementBehaviour.playerStatus = PlayerMovementBehaviour.movementStatuses.AcceleratedMovement;
+                    Accelerating = true;
 
-                runningTimer -= Time.deltaTime;
+                    runningTimer -= Time.deltaTime;
 
-                if (runningTimer <= 0f)
+                    if (runningTimer <= 0f)
+                    {
+                        Accelerating = false;
+                    }
+                    break;
+                }
+                else
                 {
                     Accelerating = false;
                 }
-                break;
             }
-            else
+            foreach (KeyCode item in SlowDownKeys)
             {
-                Accelerating = false;
-            }
-        }
-        foreach (KeyCode item in SlowDownKeys)
-        {
-            if (Input.GetKey(item) || CrossPlatformInputManager.GetAxis("Vertical") < 0)
-            {
-                PlayerMovementBehaviour.playerMovementBehaviour.playerStatus 
-                    = PlayerMovementBehaviour.movementStatuses.SlowedDownMovement;
-                SlowingDown = true;
+                if (Input.GetKey(item) || CrossPlatformInputManager.GetAxis("Vertical") < 0)
+                {
+                    PlayerMovementBehaviour.playerMovementBehaviour.playerStatus
+                        = PlayerMovementBehaviour.movementStatuses.SlowedDownMovement;
+                    SlowingDown = true;
 
+                    if (runningTimer < resetRunningTimer)
+                    {
+                        runningTimer += 2 * Time.deltaTime;
+                    }
+
+                    break;
+                }
+                else
+                {
+                    SlowingDown = false;
+                }
+            }
+            if (!Accelerating && !SlowingDown)
+            {
+                PlayerMovementBehaviour.playerMovementBehaviour.playerStatus = PlayerMovementBehaviour.movementStatuses.NormalMovement;
                 if (runningTimer < resetRunningTimer)
                 {
-                    runningTimer += 2*Time.deltaTime;
+                    runningTimer += Time.deltaTime;
                 }
+            }
 
-                break;
-            }
-            else
-            {
-                SlowingDown = false;
-            }
         }
-        if (!Accelerating && !SlowingDown)
+        else
         {
-            PlayerMovementBehaviour.playerMovementBehaviour.playerStatus = PlayerMovementBehaviour.movementStatuses.NormalMovement;
-            if (runningTimer<resetRunningTimer)
-            {
-                runningTimer += Time.deltaTime;
-            }
+            PlayerMovementBehaviour.playerMovementBehaviour.playerStatus = PlayerMovementBehaviour.movementStatuses.MidAir;
         }
     }
+    
 }
