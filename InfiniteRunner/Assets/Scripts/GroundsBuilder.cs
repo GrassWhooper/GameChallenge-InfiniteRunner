@@ -4,8 +4,10 @@ using System.Collections.Generic;
 
 public class GroundsBuilder : MonoBehaviour {
     public static GroundsBuilder groundBuilder;
-    public GameObject landA;
-    public GameObject landB;
+
+    [Tooltip("Place All segments you want to be made in this list")]
+    public List<GameObject> allSegments;
+
     public int pooledAmount;
     public float groundYDifferenceFromZero = 1.5f;
     [Tooltip("which land/Segment do you want to be the inital one")]
@@ -14,13 +16,12 @@ public class GroundsBuilder : MonoBehaviour {
     public bool RandomizedSegments=true;
 
     List<List<GameObject>> MasterPool;
-    List<GameObject> SegmentA, SegmentB;
 
     GameObject player;
     Vector3 nextGroundPos;
     float zDistStartToMid = 0f;
 
-    float secs=10f;
+
 
 
 
@@ -35,8 +36,7 @@ public class GroundsBuilder : MonoBehaviour {
     // Use this for initialization
     void Start ()
     {
-        SegmentA = new List<GameObject>();
-        SegmentB = new List<GameObject>();
+
         MasterPool = new List<List<GameObject>>();
 
         CreateThePools();
@@ -53,18 +53,14 @@ public class GroundsBuilder : MonoBehaviour {
     }
     void CreateThePools()
     {
-        SegmentA = PoolsCreator.poolCreator.CreatPoolSpace(landA, pooledAmount);
-        SegmentB = PoolsCreator.poolCreator.CreatPoolSpace(landB, pooledAmount);
-
-        SegmentA = PoolsCreator.poolCreator.CreateActualPool(SegmentA, Vector3.zero, "All Lands");
-        SegmentB = PoolsCreator.poolCreator.CreateActualPool(SegmentB, Vector3.zero, "All Lands");
-
-        PoolsCreator.poolCreator.FillMasterPool(MasterPool, SegmentA);
-        PoolsCreator.poolCreator.FillMasterPool(MasterPool, SegmentB);
-
-        PoolsCreator.poolCreator.DeActivatePool(SegmentA);
-        PoolsCreator.poolCreator.DeActivatePool(SegmentB);
-
+        foreach (GameObject item in allSegments)
+        {
+            List<GameObject> segmentPoolSpace = new List<GameObject>();
+            segmentPoolSpace=PoolsCreator.poolCreator.CreatPoolSpace(item, pooledAmount);
+            segmentPoolSpace= PoolsCreator.poolCreator.CreateActualPool(segmentPoolSpace, Vector3.zero, "All Lands");
+            PoolsCreator.poolCreator.FillMasterPool(MasterPool, segmentPoolSpace);
+            PoolsCreator.poolCreator.DeActivatePool(segmentPoolSpace);
+        }
     }
 
     void PlaceInitialGround()
@@ -75,9 +71,14 @@ public class GroundsBuilder : MonoBehaviour {
         {
             index = Random.Range(0, MasterPool.Count);
         }
-        else
+        else if(index>0 && index<=MasterPool.Count)
         {
             index = firstPieceIndex;
+        }
+        else
+        {
+            Debug.LogWarning("Index Of Piece Is Out Of Range so piece is set to the first one");
+            index = 0;
         }
 
         chosenPool = PoolsCreator.poolCreator.GrabChosenPoolFrom(MasterPool, index);
@@ -107,8 +108,6 @@ public class GroundsBuilder : MonoBehaviour {
         {
             Debug.LogWarning("HasBeen Set To Default Which is 0 (First Ground)");
         }
-
-
 
         chosenPool = PoolsCreator.poolCreator.GrabChosenPoolFrom(MasterPool, index);
         GameObject activateThis = PoolsCreator.poolCreator.GetInActiveObjectInPool(chosenPool, false, null);
