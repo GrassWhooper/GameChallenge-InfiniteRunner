@@ -11,6 +11,7 @@ public class CamFollowPlayer : MonoBehaviour {
     {
         player = GameObject.FindGameObjectWithTag("Player").transform;
         offSet = player.transform.position - transform.position;
+        //print(offSet.z);
 	}
 
     // Update is called once per frame

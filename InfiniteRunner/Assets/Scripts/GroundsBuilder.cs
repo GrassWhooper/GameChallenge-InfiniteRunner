@@ -117,7 +117,7 @@ public class GroundsBuilder : MonoBehaviour {
         activateThis.transform.position = nextGroundPos;
         activateThis.SetActive(true);
         nextGroundPos = activateThis.transform.position;
-        print(nextGroundPos.z);
+
     }
 
 
