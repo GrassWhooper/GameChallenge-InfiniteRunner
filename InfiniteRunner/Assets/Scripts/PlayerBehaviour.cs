@@ -204,7 +204,8 @@ public class PlayerBehaviour : MonoBehaviour {
             }
             if (!Accelerating && !SlowingDown)
             {
-                PlayerMovementBehaviour.playerMovementBehaviour.playerStatus = PlayerMovementBehaviour.movementStatuses.NormalMovement;
+                PlayerMovementBehaviour.playerMovementBehaviour.playerStatus =
+                    PlayerMovementBehaviour.movementStatuses.NormalMovement;
                 if (runningTimer < resetRunningTimer)
                 {
                     runningTimer += Time.deltaTime;

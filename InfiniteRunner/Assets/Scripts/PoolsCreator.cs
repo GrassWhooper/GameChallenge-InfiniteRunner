@@ -4,6 +4,21 @@ using System.Collections.Generic;
 
 public class PoolsCreator : MonoBehaviour {
     public static PoolsCreator poolCreator;
+
+    public List<GameObject> GrabChosenPoolFrom(List<List<GameObject>> MasterPool , int index)
+    {
+        List<GameObject> selectedPool = new List<GameObject>();
+        selectedPool = MasterPool[index];
+        return selectedPool;
+    }
+
+    public void FillMasterPool(List<List<GameObject>> MasterPool ,List<GameObject> poolToBePutIn)
+    {
+        MasterPool.Add(poolToBePutIn);
+        
+        
+    }
+
     public GameObject GetInActiveObjectInPool(List< GameObject> pool , bool poolWillGrow , GameObject addMoreOfThis)
     {
         foreach (GameObject item in pool)
@@ -43,7 +58,7 @@ public class PoolsCreator : MonoBehaviour {
         return poolToBeFilled;
     }
 
-    public List<GameObject> CreateActualPool(List<GameObject> poolToCreate, Vector3 startingLocation, string Parent, bool WantRefrenceAfterBirth)
+    public List<GameObject> CreateActualPool(List<GameObject> poolToCreate, Vector3 startingLocation, string Parent)
     {
         List<GameObject> BornObjectsFromPool = new List<GameObject>();
 
@@ -61,21 +76,6 @@ public class PoolsCreator : MonoBehaviour {
 
         return BornObjectsFromPool;
     }
-
-    public void CreateActualPool(List<GameObject>poolToCreate , Vector3 startingLocation , string Parent)
-    {
-        foreach (GameObject item in poolToCreate)
-        {
-            GameObject clonedItem = (GameObject)Instantiate(item, startingLocation, Quaternion.identity);
-            if (GameObject.Find(Parent) == false)
-            {
-                new GameObject(Parent);
-            }
-            GameObject selectParent = GameObject.Find(Parent);
-            clonedItem.transform.parent = selectParent.transform;
-        }
-    }
-
     public void CreateActualPool(List<GameObject> poolToCreate)
     {
         foreach (GameObject item in poolToCreate)

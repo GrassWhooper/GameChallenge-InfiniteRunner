@@ -15,8 +15,7 @@ public class SegmentMidPoint : MonoBehaviour {
             GetComponent<BoxCollider>().enabled = false;
         }
     }
-
-
+    
     void OnEnable()
     {
         GetComponent<BoxCollider>().enabled = true;

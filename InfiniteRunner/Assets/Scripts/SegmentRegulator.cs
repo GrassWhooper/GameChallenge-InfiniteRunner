@@ -20,7 +20,7 @@ public class SegmentRegulator : MonoBehaviour {
     }
 
     // Use this for initialization
-    void Start ()
+    void OnEnable ()
     {
         StartCoroutine(GetResultant(startPos, midPos));
 	}
@@ -41,7 +41,7 @@ public class SegmentRegulator : MonoBehaviour {
         }
         else
         {
-            //Debug.LogWarning("new piece should be spawned");
+            Debug.LogWarning("SomethingFishy Happened");
         }
         
     }
